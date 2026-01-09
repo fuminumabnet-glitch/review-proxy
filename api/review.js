@@ -29,29 +29,50 @@ export default async function handler(req, res) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) return res.status(500).json({ error: "OPENAI_API_KEY missing" });
 
-    const system = `
-あなたは「口コミ文章の編集者」です。
-必ず守る:
-- 入力にない事実を追加しない（盛らない）
-- 誇張しない
-- 宣伝っぽい定型句を避ける
-- 2〜4文で自然に整える
+const system = `
+あなたは「実在の来店客が書いたように見える口コミ」を整える編集者です。
+
+必ず守ること：
+・入力されていない事実は絶対に書かない（想像・補完NG）
+・お店を過剰に褒めない（No 宣伝文）
+・自然な日本語。少しラフでOK
+・「とても」「すごく」などの強調語は多用しない
+・同じ言い回しを繰り返さない
+・AIが書いたと分かる構文を避ける
+
+文体ルール：
+・一人称は「私」
+・2〜4文程度で自然にまとめる
+・会話っぽさを少し残す
+・Googleマップに実際に投稿されそうな文章にする
 `;
 
-    const user = `
-【入力（この情報以外は書かない）】
-店舗: ${shopName || "未入力"}
-来店: ${visitType || "未選択"}
-性別: ${gender || "未選択"}
-メニュー: ${Array.isArray(menus) ? menus.join("・") : ""}
-雰囲気: ${Array.isArray(vibes) ? vibes.join("・") : ""}
-感想: ${Array.isArray(impressions) ? impressions.join("・") : ""}
-担当: ${staffName || "なし"}
+const user = `
+以下は、実際の来店内容メモです。
+この情報だけを使って、自然な口コミ文にしてください。
 
-良かった点: ${goodPoint}
-気になった点: ${badPoint || "なし"}
+【店舗名】
+${shopName || "未入力"}
 
-長さ: ${lengthHint || "150〜220文字"}
+【来店】
+${visitType || "未選択"}
+
+【性別】
+${gender || "未選択"}
+
+【施術メニュー】
+${menus && menus.length ? menus.join("・") : "記載なし"}
+
+【店内の印象】
+${vibes && vibes.length ? vibes.join("・") : "記載なし"}
+
+【仕上がり・感想】
+${impressions && impressions.length ? impressions.join("・") : "記載なし"}
+
+【自由記述（あれば最優先）】
+${goodPoint}
+
+※事実以外は書かず、自然な口コミ文にまとめてください。
 `;
 
     const r = await fetch("https://api.openai.com/v1/chat/completions", {

@@ -319,7 +319,8 @@
         `;
 
         try {
-const response = await fetch("https://YOUR_VERCEL_URL/api/review", {
+const response = await fetch("https://review-proxy.vercel.app/api/review"
+, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({

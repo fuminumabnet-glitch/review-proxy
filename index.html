@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Generator (Hair Salon)</title>
+    <style>
+        :root { --bg-color: #f9fafb; --card-bg: #ffffff; --text-main: #111827; --text-sub: #6b7280; --accent: #111827; --border: #e5e7eb; --radius: 12px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg-color); padding: 20px; text-align: center; color: var(--text-main); line-height: 1.6; margin: 0; }
+        .container { max-width: 420px; margin: 0 auto; }
+        .card { background: var(--card-bg); padding: 30px 24px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 20px; }
+        .logo-img { max-width: 280px; width: 100%; height: auto; display: block; margin: 0 auto 10px auto; }
+        #shop-name-display { font-size: 0.9rem; color: var(--text-sub); margin-bottom: 30px; display: block; font-weight: normal; }
+        h2 { font-size: 0.9rem; color: var(--text-sub); margin-bottom: 12px; text-align: left; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-top: 0; }
+        h2 span { font-size: 0.75rem; font-weight: normal; background: #f3f4f6; padding: 2px 8px; border-radius: 4px; color: #4b5563; }
+        .section { margin-bottom: 36px; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .choice-btn { padding: 12px 8px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; cursor: pointer; user-select: none; font-size: 0.9rem; font-weight: 500; color: var(--text-main); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; min-height: 48px; width: 100%; box-sizing: border-box; }
+        .choice-btn:active { transform: scale(0.98); }
+        .choice-btn.selected { background-color: var(--accent); color: white; border-color: var(--accent); }
+        .choice-btn.negative { color: var(--text-sub); font-size: 0.85rem; border-style: dashed; }
+        .choice-btn.negative.selected { background-color: #4b5563; border-color: #4b5563; color: white; border-style: solid; }
+        .free-text-area { width: 100%; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 1rem; box-sizing: border-box; background-color: #f9fafb; resize: vertical; min-height: 100px; font-family: inherit; transition: border 0.2s; }
+        .free-text-area:focus { outline: none; border-color: var(--accent); background-color: #fff; }
+        .note { text-align: right; font-size: 0.75rem; color: var(--text-sub); margin-top: 6px; margin-bottom: 0; }
+        #generate-btn { background: var(--accent); color: white; border: none; padding: 18px; font-size: 1rem; border-radius: 50px; cursor: pointer; width: 100%; font-weight: 600; letter-spacing: 0.05em; transition: opacity 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        #generate-btn:hover { opacity: 0.9; }
+        #generate-btn:disabled { background: #d1d5db; box-shadow: none; cursor: not-allowed; }
+        #result-wrapper { margin-top: 30px; text-align: left; display: none; }
+        #result-area { width: 100%; min-height: 150px; border: 1px solid var(--border); background: #f9fafb; padding: 16px; border-radius: var(--radius); font-size: 1rem; color: var(--text-main); line-height: 1.7; resize: none; box-sizing: border-box; font-family: inherit; }
+        #result-area:focus { outline: none; border-color: var(--accent); }
+        .copy-btn { background: white; color: var(--text-main); border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); cursor: pointer; width: 100%; font-weight: 600; font-size: 0.9rem; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+        .copy-btn:active { background-color: #f3f4f6; }
+        .reload-link { font-size: 0.8rem; color: #6b7280; text-decoration: underline; cursor: pointer; margin-bottom: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <img src="reviewlogo.png" alt="REVIEW GENERATOR" class="logo-img">
+        <span id="shop-name-display"></span>
+        <div onclick="location.reload()" class="reload-link">↻ 項目を入れ替える</div>
+        <div class="section">
+            <h2>01. 来店回数</h2>
+            <div class="btn-grid" id="visit-group">
+                <div class="choice-btn" onclick="toggleUnique(this)">初めて</div>
+                <div class="choice-btn" onclick="toggleUnique(this)">リピーター</div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>02. 性別</h2>
+            <div class="btn-grid" id="gender-group">
+                <div class="choice-btn" onclick="toggleUnique(this)">男性</div>
+                <div class="choice-btn" onclick="toggleUnique(this)">女性</div>
+                <div class="choice-btn" onclick="toggleUnique(this)">回答しない</div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>03. メニュー <span>複数可</span></h2>
+            <div class="btn-grid" id="menu-group">
+                <div class="choice-btn" onclick="toggle(this)">カット</div>
+                <div class="choice-btn" onclick="toggle(this)">カラー</div>
+                <div class="choice-btn" onclick="toggle(this)">パーマ</div>
+                <div class="choice-btn" onclick="toggle(this)">トリートメント</div>
+                <div class="choice-btn" onclick="toggle(this)">シャンプー</div>
+                <div class="choice-btn" onclick="toggle(this)">ヘッドスパ</div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>04. 雰囲気 <span>複数可</span></h2>
+            <div class="btn-grid" id="vibe-group"></div>
+        </div>
+        <div class="section">
+            <h2>05. 感想 <span>複数可</span></h2>
+            <div class="btn-grid" id="impression-group"></div>
+        </div>
+        <div class="section">
+            <h2>06. 自由記述 <span>任意</span></h2>
+            <textarea id="free-text" class="free-text-area" placeholder="例：担当〇〇さん&#13;&#10;　　特にここが良かった！&#13;&#10;　　ここを改善してほしい"></textarea>
+            <p class="note">AIがこの内容を優先して作成します</p>
+        </div>
+        <button id="generate-btn" onclick="generateReview()">口コミを作成する</button>
+        <div id="result-wrapper">
+            <hr style="border:none; border-top:1px solid #e5e7eb; margin: 20px 0;">
+            <textarea id="result-area" readonly></textarea>
+            <button class="copy-btn" onclick="copyText()"><span>📋 コピーしてマップを開く</span></button>
+        </div>
+    </div>
+</div>
+<script>
+    const SHOP_LIST = {
+        "takadanobaba": { name: "高田馬場店", url: "https://g.page/r/Ca06vI3qoB4eEBM/review" },
+        "shinjyukunishi": { name: "新宿西口店", url: "https://g.page/r/CVYmMLMjd4IkEBM/review" },
+        "kitasenjyu": { name: "北千住店", url: "https://g.page/r/CdMfiFO0NGXPEBM/review" },
+        "ueno": { name: "上野店", url: "https://g.page/r/CW856cOeUiPTEBM/review" },
+        "kameido": { name: "亀戸店", url: "https://g.page/r/CTylqAAfbYSVEBM/review" },
+        "akihabara": { name: "秋葉原店", url: "https://g.page/r/CdSpIPYQNfI3EBM/review" },
+        "shinookubo": { name: "新大久保店", url: "https://g.page/r/Cek1pivUOzaAEBM/review" },
+        "touyoutyou": { name: "東陽町店", url: "https://g.page/r/CaNDj_CbOZy6EBM/review" },
+        "nishinippori": { name: "西日暮里店", url: "https://g.page/r/Cbp8UbQ4OX8KEBM/review" },
+        "asakusa": { name: "浅草店", url: "https://g.page/r/CSWqNhzEEPd0EBM/review" },
+        "harajyuku": { name: "原宿店", url: "https://g.page/r/CZi8NiHEjQ5nEBM/review" },
+        "asakusabashi": { name: "浅草橋店", url: "https://g.page/r/CWWPkVvPp1RjEBM/review" },
+        "kasai": { name: "葛西店", url: "https://g.page/r/Cfq-Mx8ZLz3gEBM/review" },
+        "kawaguchi": { name: "川口店", url: "https://g.page/r/CfUcADsunSmOEBM/review" },
+        "senngoku": { name: "千石店", url: "https://g.page/r/CZfIQz6kLFf1EBM/review" },
+        "okachimachi": { name: "御徒町店", url: "https://g.page/r/CbrMlrsshkdMEBM/review" },
+        "nahakokusai": { name: "那覇国際通り店", url: "https://g.page/r/CR-GziBOrQuqEBM/review" },
+        "EX": { name: "EX秋葉原", url: "https://g.page/r/CXS7MNm0pV-TEBM/review" },
+        "kawagoe": { name: "川越店", url: "https://g.page/r/CUQDRPmrzHG9EBM/review" },
+        "komagome": { name: "駒込店", url: "https://g.page/r/Cc1DLTOK5AdCEBM/review" },
+        "kamisyakujii": { name: "上石神井店", url: "https://g.page/r/Cce3OD9W7yL6EBM/review" },
+        "aiquickokachimachi": { name: "AiQuick御徒町店", url: "https://g.page/r/CXvbOqvTAtt0EBM/review" },
+        "harajyuku": { name: "LABO原宿店", url: "https://g.page/r/CZi8NiHEjQ5nEBM/review" },
+        "matsugeasakusa": { name: "まつ毛エクステ浅草店", url: "https://g.page/r/CaBN7ps69SwwEBM/review" },
+        "matsugekasai": { name: "まつ毛エクステ葛西店", url: "https://g.page/r/CTR25Dh5oqj7EBM/review" },
+        "matsugetouyoutyou": { name: "まつ毛エクステ東陽町店", url: "https://g.page/r/CUU9qxUsUddWEBM/review" },
+        "kururiueno": { name: "くるり上野店", url: "https://g.page/r/Cf3lTj5F6awZEBM/review" },
+        "kururiokachimachi": { name: "くるり御徒町店", url: "https://g.page/r/CcnrF8DYxS4GEBM/review" },
+        "aiquickharajyuku": { name: "AiQuick原宿店", url: "https://g.page/r/Cb20RyX3N3LJEBM/review" },
+        "aiquickueno": { name: "AiQuick上野店", url: "https://g.page/r/CT_5l1aVs-LJEBM/review" },
+        "aiquickkameido": { name: "AiQuick亀戸店", url: "https://g.page/r/CQ9YnWBlQmnCEBM/review" },
+        "aiquickkomagome": { name: "AiQuick駒込店", url: "https://g.page/r/CRwGDuOV1LGJEBM/review" },
+        "aiquickakihabara": { name: "AiQuick秋葉原店", url: "https://g.page/r/Cfb5KhKK8ad9EBM/review" },
+        "aiquickkawaguchi": { name: "AiQuick川口店", url: "https://g.page/r/CbqwnaS3bwRmEBM/review" },
+        "aiquicknaha": { name: "AiQuick那覇店", url: "https://g.page/r/CZJfE_q1nmwgEBM/review" },
+        "aiquicknishinippori": { name: "AiQuick西日暮里店", url: "https://g.page/r/CZzH_2t6jOZgEBM/review" },
+        "aiquickkitasenjyu": { name: "AiQuick北千住店", url: "https://g.page/r/CcnUCdG1ajNrEBM/review" },
+        "aiquickbaba": { name: "AiQuick高田馬場店", url: "https://g.page/r/CY3xcYF71qeaEBM/review" },
+        "aiquickshinjyuku": { name: "AiQuick新宿店", url: "https://g.page/r/CbftY9YGO0hbEBM/review" },
+        "aiquickkashiwa": { name: "AiQuick柏店", url: "https://g.page/r/CQLLr9eHoQUkEBM/review" },
+        "aiquickkawagoe": { name: "AiQuick川越店", url: "https://g.page/r/CXZFoKKZ6PZbEBM/review" },
+        "browartueno": { name: "browart上野店", url: "https://g.page/r/CflhGtygEANWEBM/review" },
+        "eyeasakusabashi": { name: "アイブロウ パリジェンヌ まつ毛パーマ専門店Ai", url: "https://g.page/r/CZi8BBzOST26EBM/review" },
+        "aibrowasakusabashi": { name: "眉毛サロンai brow 浅草橋店", url: "https://g.page/r/CarFVZABN4tWEBM/review" },
+        "ganeshanishinippori": { name: "ガネーシャのうたた寝西日暮里店", url: "https://g.page/r/CVR2lw6RjjEyEBM/review" },
+        "ganeshaueno": { name: "ガネーシャのうたた寝上野店", url: "https://g.page/r/CV4aJYiNw8mQEBM/review" },
+        "ganeshaakihabara": { name: "ガネーシャのうたた寝秋葉原店", url: "https://g.page/r/CcuyfN-mhUUhEBM/review" },
+        "ganeshaokachimachi": { name: "ガネーシャのうたた寝御徒町店", url: "https://g.page/r/CRr1irL3P7a_EBM/review" },
+        "ganeshakashiwa": { name: "ガネーシャのうたた寝柏店", url: "https://g.page/r/CblGx0-wuWvfEBM/review" },
+        "ダミー": { name: "〇店", url: "https://g.page/r/AAAA" },
+    };
+
+    const POOL_VIBE = [
+    "落ち着く", "清潔感あり", "オシャレ", "リゾート風", "開放的", "モダン", "アンティーク", "木の温もり", "スタイリッシュ", "隠れ家風", 
+    "緑が豊富", "広々空間", "綺麗な内装", "明るい店内", "間接照明", "豪華な内装", "居心地最高", "高級感あり", "アットホーム", "癒やし空間", 
+    "カフェ風", "非日常的", "洗練された", "統一感あり", "整理整頓", "鏡が綺麗", "天井が高い", "日当たり良好", "センス抜群", "落ち着く色味", 
+    "フクロウ癒やし", "洞窟風ブース", "独特の世界観", "圧迫感なし", "居心地が良い", "丁寧な接客", "スタッフ親切", "笑顔が良い", "相談しやすい", "説明が丁寧", 
+    "距離感が絶妙", "活気がある", "仲が良さそう", "迅速な対応", "連携が良い", "手際が良い", "無駄がない", "押し売りなし", "安心感あり", "明朗会計", 
+    "サービス満点", "ドリンク充実", "お見送りあり", "荷物預け楽", "寄り添う接客", "威圧感なし", "プロの品格", "柔らかい物腰", "丁寧なヒアリング", "気配り上手", 
+    "話しやすい", "静かに過ごせる", "ホスピタリティ", "温かい雰囲気", "信頼できる", "感じが良い", "初めてでも安心", "過剰すぎない", "心地よい会話", "終始リラックス", 
+    "駅からスグ", "予約が楽", "当日予約OK", "待ち時間なし", "立地が良い", "シャンプー楽", "マッサージ良", "椅子が快適", "トイレが綺麗", "最新の設備", 
+    "シャンプー室暗め", "個室感あり", "ウェイティング広", "タブレット付", "充電可能", 
+    { text: "待ち時間長い", type: "negative" }, { text: "薬剤の匂い", type: "negative" }, { text: "少し騒がしい", type: "negative" }, { text: "BGM大きい", type: "negative" }, 
+    { text: "照明が眩しい", type: "negative" }, { text: "椅子が硬い", type: "negative" }, { text: "清掃不足", type: "negative" }, { text: "案内が遅い", type: "negative" }, 
+    { text: "場所が難解", type: "negative" }, { text: "私語が気になる", type: "negative" }, { text: "隣と近い", type: "negative" }, { text: "店内が寒い", type: "negative" }, 
+    { text: "店内が暑い", type: "negative" }, { text: "説明不足", type: "negative" }, { text: "会計で待つ", type: "negative" }
+];
+    const POOL_IMPRESSION = [
+    "理想通り", "イメージ通り", "大満足", "完璧な形", "垢抜けた", "若返った", "小顔に見える", "前髪が良い", "絶妙な長さ", "似合わせカット", 
+    "期待以上", "透明感が出た", "艶々になった", "色のり最高", "綺麗な発色", "ムラがない", "自然な仕上がり", "カールが綺麗", "根元ふんわり", "収まりが良い", 
+    "フォルムが綺麗", "扱いやすい", "左右バランス良い", "フェイスライン良い", "襟足スッキリ", "垢抜けカラー", "透け感カラー", "理想の白髪染め", "自然なストレート", "ツヤが出た", 
+    "まとまりが良い", "軽やかになった", "立体感が出た", "色落ちも楽しみ", "完璧な仕上がり", "指通りが良い", "さらさら", "しっとり", "髪が生き返った", "手触り最高", 
+    "ダメージ軽減", "潤いがある", "柔らかい質感", "ハリコシが出た", "ゴワつき解消", "パサつき改善", "広がりが収まった", "サラサラ復活", "髪質が変わった", "ケア方法に納得", 
+    "丁寧な施術", "技術が高い", "アイロンいらず", "セットが楽", "朝の時短", "髪が軽い", "痛みが消えた", "枝毛が目立たない", "艶髪になった", "触るのが楽しい", 
+    "褒められた", "周りに好評", "評判が良い", "自信が持てる", "テンションUP", "毎日が楽しい", "通い続けたい", "またお願いしたい", "リピート確定", "おすすめできる", 
+    "紹介したい", "感動した", "信頼できる", "コスパが良い", "納得の価格", "お得感あり", "タイミング良い", "疲れが取れた", "癒やされた", "勇気を出して正解", 
+    { text: "イメージと違う", type: "negative" }, { text: "切りすぎた", type: "negative" }, { text: "色が濃すぎた", type: "negative" }, { text: "色落ちが早い", type: "negative" }, 
+    { text: "パーマ取れた", type: "negative" }, { text: "指通り悪い", type: "negative" }, { text: "パサつき残る", type: "negative" }, { text: "左右非対称", type: "negative" }, 
+    { text: "セットしにくい", type: "negative" }, { text: "染みた・痛い", type: "negative" }, { text: "期待外れ", type: "negative" }, { text: "コスパ悪い", type: "negative" }, 
+    { text: "時間がかかった", type: "negative" }, { text: "説明が不十分", type: "negative" }, { text: "会話が疲れた", type: "negative" }, { text: "雑な感じ", type: "negative" }, 
+    { text: "ムラがある", type: "negative" }, { text: "広がり気になる", type: "negative" }, { text: "もう行かない", type: "negative" }, { text: "金額が違った", type: "negative" }
+];
+
+    let currentShopUrl = "", currentShopName = "美容室";
+
+    function getRandomItems(pool, count) { return [...pool].sort(() => 0.5 - Math.random()).slice(0, count); }
+    function renderButtons(containerId, items) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+        items.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "choice-btn";
+            div.onclick = function() { toggle(this); };
+            if (typeof item === 'string') { div.innerText = item; }
+            else { div.innerText = item.text; if (item.type === 'negative') div.classList.add('negative'); }
+            container.appendChild(div);
+        });
+    }
+
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const shopId = urlParams.get('id');
+        const shopDisplay = document.getElementById('shop-name-display');
+        if (shopId && SHOP_LIST[shopId]) {
+            currentShopName = SHOP_LIST[shopId].name;
+            shopDisplay.innerText = currentShopName;
+            currentShopUrl = SHOP_LIST[shopId].url;
+        } else {
+            shopDisplay.innerText = "店舗未指定";
+            currentShopUrl = "";
+            currentShopName = "こちらのサロン";
+        }
+        renderButtons("vibe-group", getRandomItems(POOL_VIBE, 10));
+        renderButtons("impression-group", getRandomItems(POOL_IMPRESSION, 10));
+    };
+
+    function toggle(element) { element.classList.toggle('selected'); }
+    function toggleUnique(element) {
+        const siblings = element.parentElement.children;
+        for (let sib of siblings) sib.classList.remove('selected');
+        element.classList.add('selected');
+    }
+
+    async function generateReview() {
+        const btn = document.getElementById('generate-btn');
+        const resultWrapper = document.getElementById('result-wrapper');
+        const resultArea = document.getElementById('result-area');
+        
+        // 選択された項目の取得
+        let visitsRaw = Array.from(document.querySelectorAll('#visit-group .selected')).map(el => el.innerText);
+        let visitsForAi = visitsRaw.join(', ');
+
+        const genderElement = document.querySelector('#gender-group .selected');
+        const gender = genderElement ? genderElement.innerText : "";
+        
+        const menus = Array.from(document.querySelectorAll('#menu-group .selected')).map(el => el.innerText);
+        const vibes = Array.from(document.querySelectorAll('#vibe-group .selected')).map(el => el.innerText);
+        const impressions = Array.from(document.querySelectorAll('#impression-group .selected')).map(el => el.innerText);
+        const freeText = document.getElementById('free-text').value;
+
+        // 入力チェック
+        if (visitsRaw.length === 0 && !gender && menus.length === 0 && freeText.trim() === "") {
+            alert("項目をいくつか選択するか、自由記述を入力してください");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "作成中...";
+        resultWrapper.style.display = "block";
+        resultArea.value = "AIが考え中...";
+        resultArea.style.opacity = "0.5";
+
+        // ★★★ 1. 来店背景・季節ロジック（前回と同じ） ★★★
+        const dice = Math.random();
+        let seasonPrompt = "";
+        
+        if (dice < 0.15) { // 季節（少し確率上げました）
+            const month = new Date().getMonth() + 1;
+            let seasonThemes = [];
+            // 簡易的に四季で分岐
+            if (month >= 3 && month <= 5) seasonThemes = ["春のイメチェン", "花粉や湿気対策", "新生活の準備", "暖かくなったので軽くしたい"];
+            else if (month >= 6 && month <= 9) seasonThemes = ["夏の湿気対策", "暑いのでサッパリしたい", "紫外線ダメージケア", "汗で崩れないように"];
+            else if (month >= 10 && month <= 11) seasonThemes = ["秋の乾燥対策", "夏のダメージ修復", "落ち着いたカラーに", "冬に向けて伸ばしたい"];
+            else seasonThemes = ["冬の乾燥・静電気対策", "年末のリフレッシュ", "寒さで凝った頭皮ケア", "イベント前のメンテナンス"];
+            
+            seasonPrompt = `季節背景：${seasonThemes[Math.floor(Math.random() * seasonThemes.length)]}の文脈で。`;
+        } else if (dice < 0.6) { // 背景（確率上げました）
+            const contexts = [
+                "仕事帰りの疲れ癒やし", "明日大事な予定がある", "自分へのご褒美", "急に時間が空いた", 
+                "なんとなく気分転換", "友人の結婚式前", "デート前", "旅行前", 
+                "鏡を見て髪の痛みが気になった", "リラックス目的", "久しぶりの休日"
+            ];
+            const randomContext = contexts[Math.floor(Math.random() * contexts.length)];
+            seasonPrompt = `来店動機：${randomContext}というシチュエーションで。`;
+        }
+
+        // 「初めて」の場合の補足
+        if (visitsForAi.includes("初めて")) {
+            visitsForAi += "（ネット検索やSNS、看板を見て気になっていた等、自然な動機を付与）";
+        }
+
+        // ★★★ 2. 文体（語尾・トーン）の強制指定 ★★★
+        // ここが今回の「似通わせない」ための核心部分です。
+        const writingStyles = [
+            { name: "標準・丁寧", instruction: "語尾は『〜です』『〜ます』。知的で落ち着いた大人の文章。感嘆符（！）は使わない。" },
+            { name: "感情豊か・ソフト", instruction: "語尾は『〜でした！』『〜なのが嬉しい』など。喜びを素直に表現する。少しテンション高め。" },
+            { name: "フランク・親しみ", instruction: "『〜だった』『〜かも』など、少し砕けた表現を混ぜる。堅苦しさを排除し、友人に話すような距離感で。" },
+            { name: "短文・体言止め", instruction: "『カット技術最高。』『店内の雰囲気も◎』のように、体言止めや短文を多用し、リズム良く。ダラダラ書かない。" },
+            { name: "独白・日記風", instruction: "『〜だと思ったけど、意外と〜だった。』『久しぶりに〜した。』のような、自分の内面の独り言のような書き口。" },
+            { name: "絶賛・感動", instruction: "『とにかく〇〇が良い』『間違いなし』など、強い言葉で推奨する。熱量の高いファン。" }
+        ];
+        
+        // 性別によって選ばれやすい文体を重み付けすることも可能ですが、
+        // あえてランダムにすることで「意外性」を出します。
+        const selectedStyle = writingStyles[Math.floor(Math.random() * writingStyles.length)];
+
+
+        // プロンプト作成
+        const prompt = `
+        あなたは美容室「${currentShopName}」のお客様として、Googleマップの口コミを書いてください。
+        以下の【文体指定】を最重要視して、他人の口コミと被らない個性を出してください。
+
+        【性別】${gender || "指定なし"}
+        【ターゲット読者】これから店選びをする人
+        【背景・季節】${seasonPrompt}
+        
+        【文体指定（最重要）】
+        👉 ${selectedStyle.instruction}
+        
+        【選択された要素】
+        来店頻度:${visitsForAi}
+        メニュー:${menus.join(', ')}
+        雰囲気:${vibes.join(', ')}
+        感想:${impressions.join(', ')}
+        自由記述:${freeText}
+
+        【禁止事項】
+        ・「接客も良く、技術も素晴らしかったです」のような、ありきたりなまとめ方は禁止。
+        ・「また行きたいです」という定型文での締め禁止。（「次はカラーもお願いします」や「来月も予約します」など具体的に、または締めの言葉なしで終わる）
+        ・「美容室」という単語禁止。（サロン、ここ、お店、などで）
+        ・絵文字使用禁止。
+        ・具体的な設備（雑誌、ドリンクの種類など）への言及禁止。
+
+        【執筆ルール】
+        ・文字数は100文字〜200文字程度。
+        ・自由記述の内容があれば、それを核にして文章を広げること。
+        ・自然な口語体（書き言葉すぎないように）。
+        `;
+
+        try {
+            const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${API_KEY}` },
+                body: JSON.stringify({ 
+                    model: "gpt-4o-mini", 
+                    temperature: 1.0, // 創造性を上げるために少し高く設定
+                    messages: [{role: "user", content: prompt}] 
+                })
+            });
+            const data = await response.json();
+            
+            if (data.error) {
+                resultArea.value = "エラー: " + data.error.message;
+            } else {
+                resultArea.value = data.choices[0].message.content;
+            }
+        } catch (error) {
+            resultArea.value = "通信エラーが発生しました。";
+        }
+
+        btn.disabled = false;
+        btn.innerText = "口コミを作成する";
+        resultArea.style.opacity = "1";
+        resultWrapper.scrollIntoView({ behavior: 'smooth' });
+    }
+    function copyText() {
+        const copyText = document.getElementById("result-area");
+        if (copyText.value.includes("AIが考え中")) return;
+        copyText.select(); document.execCommand("copy");
+        if (confirm("文章をコピーしました！\n\nGoogleマップを開いて貼り付けますか？")) {
+            if (currentShopUrl) window.open(currentShopUrl, '_blank');
+            else alert("店舗URLが設定されていません。\n手動でGoogleマップを開いてください。");
+        }
+    }
+</script>
+</body>
+</html>
